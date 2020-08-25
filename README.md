@@ -11,4 +11,6 @@
     * [GAEN API](https://developers.google.com/android/exposure-notifications/exposure-notifications-api)
 
 * related projects
+    * [CoraLibre](https://github.com/CoraLibre/CoraLibre-android-sdk)
+        * [More](https://github.com/corona-warn-app/cwa-app-android/issues/75)
 
