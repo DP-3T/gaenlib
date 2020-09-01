@@ -1,3 +1,16 @@
+# Meetings
+
+## 2020-09-01 (Linus and Christian)
+
+* steps
+    * write Java mock classes for GAEN 1.6
+    * ignore 1.1 specific data structures for now
+
+* questions
+    * what about device-specific calibration values
+
+## First meeting (Linus)
+
 * Android: 
     * Google Play Services
     * Implement a library that is API compatible that relies on the Google / Bluetooth LE API
