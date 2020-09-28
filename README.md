@@ -15,7 +15,7 @@
         * [More](https://github.com/corona-warn-app/cwa-app-android/issues/75)
 
 
-# Study of existing implementations (see https://github.com/DP-3T/gaenlib#1)
+# Study of existing implementations (see [issue](https://github.com/DP-3T/gaenlib/issues/1))
 
 ## [microG](https://microg.org/)
 Open-source project aiming to provide a free implementation of Google Play Services.
