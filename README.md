@@ -38,7 +38,7 @@ Open-souce project aiming to provide a free implementation of an EN SDK for coro
   - Applications will require some (hopefully minor) changes to adapt to the library.
   - Crypto and Bluetooth parts are fairly advanced, client API (along with some implementation of the Tasks API) is just at the beginning.
 
-Matrix [channel](https://app.element.io/#/room/#coralibre:matrix.org) for CoraLibre discussion. The microG main developer is also connected and participates to the discussion.
+There is a Matrix [channel](https://app.element.io/#/room/#coralibre:matrix.org) for CoraLibre discussion. The microG main developer is also connected and participates to the discussion.
 
 ## [Google libraries](https://github.com/google/exposure-notifications-internals/pull/15)
 Contains a snapshot of code from Google Play Services' Exposure Notifications module.
