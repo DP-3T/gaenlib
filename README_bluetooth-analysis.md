@@ -1,4 +1,4 @@
-# Bluetooth analysis (see https://github.com/DP-3T/gaenlib/issues/11#issuecomment-715442353)
+# Bluetooth analysis (see [issue](https://github.com/DP-3T/gaenlib/issues/11#issuecomment-715442353))
 
 Tools used:
 * Logcat traces
