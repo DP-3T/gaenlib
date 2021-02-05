@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+
+import datetime
+import re
+
+from matplotlib.dates import DateFormatter
+from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.pyplot import plot, grid, axes, show, legend
+
+RX_START_SCAN = re.compile(
+        r'^.*(?P<ts>\d\d-\d\d \d\d:\d\d:\d\d)\.(?P<msec>\d\d\d) '
+        '.*ExposureNotification: Starting scanner.*$')
+RX_STOP_SCAN = re.compile(
+        r'^.*(?P<ts>\d\d-\d\d \d\d:\d\d:\d\d)\.(?P<msec>\d\d\d) '
+        '.*ExposureNotification: Stopping scanner.* (?P<adv>\d+) '
+        'advertisements.*$')
+RX_START_ADV = re.compile(
+        r'^.*(?P<ts>\d\d-\d\d \d\d:\d\d:\d\d)\.(?P<msec>\d\d\d) '
+        '.*ExposureNotification: Starting advertiser.*$')
+RX_WORKER_SYNC = re.compile(
+        r'^.*(?P<ts>\d\d-\d\d \d\d:\d\d:\d\d)\.(?P<msec>\d\d\d) '
+        '.*WM-WorkerWrapper: Worker result SUCCESS for Work .* '
+        'tags={ org.dpppt.android.sdk.internal.SyncWorker } ].*$')
+
+VALUE_MIN, VALUE_MAX, VALUE_SCAN, VALUE_ADV, VALUE_SYNC = [0, 40, 10, 20, 30]
+VALUES = [VALUE_SCAN, VALUE_ADV, VALUE_SYNC]
+
+def get_ts(m):
+    msec = round(float(m.group("msec")))
+    ts = datetime.datetime.strptime(f"2021-{m.group('ts')}",
+            '%Y-%m-%d %H:%M:%S')
+    if msec >= 500:
+        ts += datetime.timedelta(seconds=1)
+
+    return ts
+
+def analyze(filename):
+    scans = []
+    advertisements = []
+    syncs = []
+
+    with open(filename) as f:
+        start_scan = None
+
+        for line in f.readlines():
+            m = RX_START_SCAN.match(line)
+            if m:
+                start_scan = get_ts(m)
+                continue
+
+            if start_scan is not None:
+                m = RX_STOP_SCAN.match(line)
+                if m:
+                    ts = get_ts(m)
+                    nb_adv = int(m.group("adv"))
+                    scans.append([start_scan, ts, nb_adv])
+                    continue
+
+            m = RX_START_ADV.match(line)
+            if m:
+                ts = get_ts(m)
+                advertisements.append([ts])
+                continue
+
+            m = RX_WORKER_SYNC.match(line)
+            if m:
+                ts = get_ts(m)
+                syncs.append([ts])
+                continue
+
+    return scans, advertisements, syncs
+
+def plot_device_data(index, scans, advertisements, syncs, events):
+    offset = index
+
+    for i, scan in enumerate(scans):
+        lines = plot([scan[0], scan[1]],
+            [VALUE_SCAN + offset, VALUE_SCAN + offset],
+            'o-',
+            color='green',
+            )
+        if i == 0 and index == 0:
+            lines[0].set_label('BLE scans')
+
+    lines = plot(advertisements,
+        [VALUE_ADV + offset] * len(advertisements),
+        'o',
+        color='blue',
+        )
+    if index == 0:
+        lines[0].set_label('BLE advertisement changes')
+
+    lines = plot(syncs,
+        [VALUE_SYNC + offset] * len(syncs),
+        'o',
+        color='orange',
+        )
+    if index == 0:
+        lines[0].set_label('backend server syncs')
+
+def plot_data(device_logs, events):
+    ax = axes(
+        title='App activity',
+        xlabel='time',
+        ylim=(VALUE_MIN, VALUE_MAX),
+        )
+    ax.format_xdata = DateFormatter("%Y-%m-%d %H:%M:%S")
+    ax.set_yticks(
+        sum([list(range(val, val + len(device_logs)))
+            for val in VALUES
+            ], []),
+        minor=False,
+        )
+    ax.set_yticklabels(
+        [
+            log.split('.')[0]
+            for val in VALUES
+            for log in device_logs
+            ],
+        minor=False,
+        )
+
+    for index, log in enumerate(device_logs):
+        scans, advertisements, syncs = analyze(log)
+        plot_device_data(index, scans, advertisements, syncs, events)
+
+    ymin, ymax = ax.get_ybound()
+    for evt in events:
+        line = Line2D(
+                [evt[0], evt[0]],
+                [ymin, ymax],
+                dashes=(3, 3, 10, 3),
+                color='gray',
+                )
+        ax.add_line(line)
+        ax.annotate(
+                evt[1],
+                (evt[0], ymin),
+                xytext=(0, -5),
+                textcoords='offset points',
+                rotation='vertical',
+                horizontalalignment='center',
+                verticalalignment='top',
+                )
+
+    legend(loc='upper right')
+    grid()
+
+    show()
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(
+            description="Plot app activity")
+
+    parser.add_argument('--log-file', '-f',
+            help="location of device logcat file",
+            action='append',
+            required=True,
+            )
+
+    def event(s):
+        d, label = s.split('/')
+        return datetime.datetime.fromisoformat(d), label
+
+    parser.add_argument('--event', '-e',
+            help='event in "ISO 8601 timestamp/label" format',
+            action='append',
+            type=event,
+            default=[],
+            )
+
+    params = parser.parse_args()
+
+    plot_data(device_logs=params.log_file, events=params.event)
